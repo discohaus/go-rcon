@@ -1,20 +1,36 @@
 package rcon
 
-import "fmt"
+import (
+	"fmt"
+)
+
+type Option func(*Client)
+
+func WithOptions(cs CharSet) Option {
+	return func(c *Client) {
+		c.charSet = cs
+	}
+}
 
 // Client acts as the entrypoint to send RCON messages. Client hold
 // all the configuration necessary to connect to Minecraft server.
 type Client struct {
 	addr     string
 	password string
+	charSet  CharSet
 }
 
 // NewClient creates and returns a configured RCON client.
-func NewClient(addr, password string) *Client {
-	return &Client{
+func NewClient(addr, password string, opts ...Option) *Client {
+	c := &Client{
 		addr:     addr,
 		password: password,
+		charSet:  CharSetASCII,
 	}
+	for _, opt := range opts {
+		opt(c)
+	}
+	return c
 }
 
 // Send establishes a new authenticated connection to the Minecraft
@@ -26,7 +42,7 @@ func NewClient(addr, password string) *Client {
 // Minecraft server creates a new connection. Upon completion of the
 // request the established connection is closed.
 func (c *Client) Send(command string) (string, error) {
-	conn, err := Dial(c.addr, c.password)
+	conn, err := Dial(c.addr, c.password, c.charSet)
 	if err != nil {
 		return "", fmt.Errorf("failed to establish connection: %w", err)
 	}
