@@ -44,6 +44,6 @@ Use the `CharSet` type to specify the required character set for the RCON connec
 ```go
 rconClient := rcon.NewClient("rcon://localhost:25575", "password", WithOptions(rcon.CharSetASCII))
 ```
-For older Minecraft versions use `CharSetASCII`.
+For older Minecraft versions use `CharSetASCII`. This is also the default character set when no options are specified.
 
 For newer Minecraft versions or those that sends Minecraft Color codes such as `§3` use `CharSetLatin_1` or for simplicity `CharSetUTF8`.
