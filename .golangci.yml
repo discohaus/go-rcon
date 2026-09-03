@@ -1,4 +1,5 @@
 version: "2"
+
 run:
   timeout: 5m
 
@@ -11,7 +12,3 @@ linters:
     - unused
     - misspell
     - revive
-
-formatters:
-  enable:
-    - gofmt
