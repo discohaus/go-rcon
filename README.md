@@ -38,3 +38,39 @@ Use the Send function to request commands be remotely executed on the Minecraft 
 ```go
 rconClient, err := rconClient.Send("time set day")
 ```
+
+## Development
+
+### Prerequisites
+
+- Go (defined in `go.mod`)
+- [`golangci-lint`](https://golangci-lint.run/)
+
+### Available Commands
+
+A `Makefile` is provided to simplify common development operations:
+
+- **Run tests:**
+  ```sh
+  make test
+  ```
+- **Run tests with coverage:**
+  ```sh
+  make test-coverage
+  ```
+- **Run linter:**
+  ```sh
+  make lint
+  ```
+- **Format code:**
+  ```sh
+  make fmt
+  ```
+- **Tidy Go modules:**
+  ```sh
+  make tidy
+  ```
+- **Clean build artifacts:**
+  ```sh
+  make clean
+  ```
