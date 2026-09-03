@@ -46,4 +46,40 @@ rconClient := rcon.NewClient("rcon://localhost:25575", "password", WithOptions(r
 ```
 For older Minecraft versions use `CharSetASCII`. This is also the default character set when no options are specified.
 
-For newer Minecraft versions or those that sends Minecraft Color codes such as `§3` use `CharSetLatin_1` or for simplicity `CharSetUTF8`.
+For newer Minecraft versions or those that sends Minecraft Color codes such as `§3` use `CharSetLatin_1` or for servers understanding UTF8 you can use `CharSetUTF8`.
+
+## Development
+
+### Prerequisites
+
+- Go (defined in `go.mod`)
+- [`golangci-lint`](https://golangci-lint.run/)
+
+### Available Commands
+
+A `Makefile` is provided to simplify common development operations:
+
+- **Run tests:**
+  ```sh
+  make test
+  ```
+- **Run tests with coverage:**
+  ```sh
+  make test-coverage
+  ```
+- **Run linter:**
+  ```sh
+  make lint
+  ```
+- **Format code:**
+  ```sh
+  make fmt
+  ```
+- **Tidy Go modules:**
+  ```sh
+  make tidy
+  ```
+- **Clean build artifacts:**
+  ```sh
+  make clean
+  ```

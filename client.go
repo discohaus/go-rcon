@@ -1,3 +1,4 @@
+// Package rcon provides a Go client for the Minecraft RCON protocol.
 package rcon
 
 import (
@@ -46,7 +47,9 @@ func (c *Client) Send(command string) (string, error) {
 	if err != nil {
 		return "", fmt.Errorf("failed to establish connection: %w", err)
 	}
-	defer conn.Close()
+	defer func() {
+		_ = conn.Close()
+	}()
 
 	return conn.SendCommand(command)
 }

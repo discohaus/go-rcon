@@ -11,6 +11,7 @@ import (
 )
 
 const (
+	// DefaultPort is the default RCON server port for Minecraft.
 	DefaultPort uint16 = 25575
 )
 
