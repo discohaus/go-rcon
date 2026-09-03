@@ -5,9 +5,11 @@ import (
 	"fmt"
 )
 
-type Option func(*Client)
+// ClientOption defines a function that can be used to configure a Client.
+type ClientOption func(*Client)
 
-func WithOptions(cs CharSet) Option {
+// WithOptions returns an ClientOption that sets the character set for the client.
+func WithOptions(cs CharSet) ClientOption {
 	return func(c *Client) {
 		c.charSet = cs
 	}
@@ -22,7 +24,7 @@ type Client struct {
 }
 
 // NewClient creates and returns a configured RCON client.
-func NewClient(addr, password string, opts ...Option) *Client {
+func NewClient(addr, password string, opts ...ClientOption) *Client {
 	c := &Client{
 		addr:     addr,
 		password: password,

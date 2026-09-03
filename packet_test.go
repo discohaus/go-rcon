@@ -52,13 +52,13 @@ func TestMarshal_CharSets(t *testing.T) {
 		{
 			name:    "Latin1 - Valid Standard ASCII Range",
 			payload: "Hello World",
-			charSet: CharSetLatin_1,
+			charSet: CharSetLatin1,
 			wantErr: false,
 		},
 		{
 			name:    "Latin1 - Valid Extended Range (ä, ö, ü as single bytes)",
 			payload: "H\xe4llo", // 0xE4 = 'ä' in ISO-8859-1 (<= 255)
-			charSet: CharSetLatin_1,
+			charSet: CharSetLatin1,
 			wantErr: false,
 		},
 
@@ -142,7 +142,7 @@ func TestUnmarshal_CharSets(t *testing.T) {
 		{
 			name:     "Unmarshal Latin1 - Valid Extended Byte",
 			rawBytes: makeRawData([]byte{'H', 0xE4, 'l', 'l', 'o'}), // 0xE4 (ä)
-			charSet:  CharSetLatin_1,
+			charSet:  CharSetLatin1,
 			wantErr:  false,
 		},
 

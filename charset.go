@@ -5,14 +5,17 @@ import (
 	"unicode"
 )
 
+// CharSet defines the character set used for RCON payloads.
 type CharSet int
 
+// CharSet constants define the supported character sets.
 const (
 	CharSetASCII CharSet = iota + 1
-	CharSetLatin_1
+	CharSetLatin1
 	CharSetUTF8
 )
 
+// Errors define the possible errors that can occur when validating a byte against a character set.
 var (
 	ErrNonASCII       = errors.New("payload contains non-ASCII characters")
 	ErrNonLatin       = errors.New("payload contains non-ISO-8859-1 characters")
@@ -20,13 +23,14 @@ var (
 	ErrInvalidCharSet = errors.New("invalid character set")
 )
 
+// ValidateByte validates a single byte against the character set.
 func (cs CharSet) ValidateByte(b byte) error {
 	switch cs {
 	case CharSetASCII:
 		if b > unicode.MaxASCII {
 			return ErrNonASCII
 		}
-	case CharSetLatin_1:
+	case CharSetLatin1:
 		if b > unicode.MaxLatin1 {
 			return ErrNonLatin
 		}
