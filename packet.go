@@ -22,9 +22,10 @@ const (
 // Packet IDs are typically incremented sequentially. Count tracks
 // the current ID and is incremented when a new Packet is created.
 var (
-	count int32 = 0
+	count int32
 )
 
+// Kind represents the type of RCON packet.
 type Kind uint32
 
 // Packet defines RCON protocol encoding.
