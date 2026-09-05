@@ -5,9 +5,26 @@ before:
   hooks:
     - go mod tidy
 
-# Disable binary building since this is a pure library
 builds:
-  - skip: true
+  - id: go-rcon
+    main: ./cmd/cli/main.go
+    binary: go-rcon
+    goos:
+      - linux
+      - darwin # macOS
+      - windows
+    goarch:
+      - amd64
+      - arm64
+
+archives:
+  - formats:
+      - tar.gz
+    format_overrides:
+      - goos: windows
+        formats:
+          - zip
+    name_template: "{{ .ProjectName }}_{{ .Version }}_{{ .Os }}_{{ .Arch }}"
 
 changelog:
   sort: asc
@@ -15,5 +32,5 @@ changelog:
     exclude:
       - '^docs:'
       - '^test:'
-      - Merge pull request
-      - Merge branch
+      - '^Merge pull request'
+      - '^Merge branch'
