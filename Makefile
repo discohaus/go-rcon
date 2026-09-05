@@ -40,3 +40,9 @@ tidy:
 clean:
 	$(GOCLEAN)
 	rm -f coverage.out
+
+cli: ## run: Runs the application
+	$(GOCMD) run cmd/cli/main.go -H localhost -P 25575 -p 1234
+
+cli-dev:
+	docker run -it -v ./data:/data -p 25575:25575 -e EULA=TRUE -e RCON_PASSWORD=1234 itzg/minecraft-server

@@ -55,3 +55,17 @@ func (c *Client) Send(command string) (string, error) {
 
 	return conn.SendCommand(command)
 }
+
+// CheckConnection attempts to establish a connection to the Minecraft
+// server and returns an error if the connection fails.
+func (c *Client) CheckConnection() error {
+	conn, err := Dial(c.addr, c.password, c.charSet)
+	if err != nil {
+		return fmt.Errorf("failed to establish connection: %w", err)
+	}
+	defer func() {
+		_ = conn.Close()
+	}()
+
+	return nil
+}
