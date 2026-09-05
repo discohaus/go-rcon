@@ -98,7 +98,12 @@ func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			m.addMessage(fmt.Sprintf("Error: %v", message.err), lipgloss.NewStyle().Foreground(lipgloss.Color("9")))
 			m.status = "error"
 		} else {
-			m.addMessage(message.output, lipgloss.NewStyle().Foreground(lipgloss.Color("252")))
+			style := lipgloss.NewStyle().Foreground(lipgloss.Color("252"))
+			if message.output == "" {
+				message.output = "[no response]"
+				style = lipgloss.NewStyle().Foreground(lipgloss.Color("208"))
+			}
+			m.addMessage(message.output, style)
 			m.status = "ready"
 		}
 		return m, nil
@@ -204,7 +209,7 @@ func (m *model) submit() (tea.Model, tea.Cmd) {
 
 func (m *model) addMessage(message string, style lipgloss.Style) {
 	m.messages = append(m.messages, style.Render(parseMinecraftCodes(message)))
-	m.viewport.SetContent(strings.Join(m.messages, "\n"))
+	m.refreshViewportContent()
 	m.viewport.GotoBottom()
 }
 
@@ -212,6 +217,12 @@ func (m *model) resize(width, height int) {
 	m.viewport.Width = clampMinimum(1, width)
 	m.viewport.Height = clampMinimum(1, height-m.textarea.Height()-4)
 	m.textarea.SetWidth(clampMinimum(1, width))
+	m.refreshViewportContent()
+}
+
+func (m *model) refreshViewportContent() {
+	content := lipgloss.NewStyle().Width(m.viewport.Width).Render(strings.Join(m.messages, "\n"))
+	m.viewport.SetContent(content)
 }
 
 func clampMinimum(minimum, value int) int {

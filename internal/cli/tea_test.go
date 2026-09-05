@@ -2,7 +2,10 @@ package cli
 
 import (
 	"errors"
+	"strings"
 	"testing"
+
+	"github.com/charmbracelet/lipgloss"
 )
 
 type fakeExecutor struct {
@@ -44,6 +47,18 @@ func TestModelAsyncErrorUpdatesStatus(t *testing.T) {
 	}
 }
 
+func TestModelShowsNoResponseForEmptyOutput(t *testing.T) {
+	m := newModel(&fakeExecutor{output: ""})
+	m.textarea.SetValue("list")
+	_, cmd := m.submit()
+	updated, _ := m.Update(cmd())
+	model := updated.(model)
+
+	if len(model.messages) != 2 || !strings.Contains(model.messages[1], "[no response]") {
+		t.Fatalf("messages = %v, want no-response message", model.messages)
+	}
+}
+
 func TestModelUnknownCommandAndExit(t *testing.T) {
 	fake := &fakeExecutor{}
 	m := newModel(fake)
@@ -56,5 +71,20 @@ func TestModelUnknownCommandAndExit(t *testing.T) {
 	_, cmd = m.submit()
 	if cmd == nil {
 		t.Fatal("/exit did not return a quit command")
+	}
+}
+
+func TestModelWrapsMessagesToViewportWidth(t *testing.T) {
+	m := newModel(&fakeExecutor{})
+	m.resize(10, 20)
+	m.addMessage("12345678901234567890", lipgloss.NewStyle())
+
+	if lines := m.viewport.TotalLineCount(); lines != 2 {
+		t.Fatalf("wrapped message has %d lines, want 2", lines)
+	}
+
+	m.resize(80, 20)
+	if lines := m.viewport.TotalLineCount(); lines != 1 {
+		t.Fatalf("resized message has %d lines, want 1", lines)
 	}
 }

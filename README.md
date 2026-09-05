@@ -168,6 +168,8 @@ make lint          # Run golangci-lint
 make fmt           # Format code
 make tidy          # Tidy Go module dependencies
 make clean         # Remove build artifacts
+make cli           # Run cli
+make cli-dev       # Run local mincraft server ready for make cli
 
 ```
 
