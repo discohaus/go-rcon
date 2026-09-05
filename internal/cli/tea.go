@@ -11,76 +11,54 @@ import (
 	"github.com/discohaus/go-rcon/pkg/rcon"
 )
 
-// Minecraft Color Mapping
 var mcColors = map[rune]string{
-	'0': "#000000", // black
-	'1': "#0000AA", // dark_blue
-	'2': "#00AA00", // dark_green
-	'3': "#00AAAA", // dark_aqua
-	'4': "#AA0000", // dark_red
-	'5': "#AA00AA", // dark_purple
-	'6': "#FFAA00", // gold
-	'7': "#AAAAAA", // gray
-	'8': "#555555", // dark_gray
-	'9': "#5555FF", // blue
-	'a': "#55FF55", // green
-	'b': "#55FFFF", // aqua
-	'c': "#FF5555", // red
-	'd': "#FF55FF", // light_purple
-	'e': "#FFFF55", // yellow
-	'f': "#FFFFFF", // white
+	'0': "#000000", '1': "#0000AA", '2': "#00AA00", '3': "#00AAAA", '4': "#AA0000", '5': "#AA00AA", '6': "#FFAA00", '7': "#AAAAAA",
+	'8': "#555555", '9': "#5555FF", 'a': "#55FF55", 'b': "#55FFFF", 'c': "#FF5555", 'd': "#FF55FF", 'e': "#FFFF55", 'f': "#FFFFFF",
 }
 
+var placeHolderText = "rcon command ... | \"/\" for UI commands, Esc to unfocus"
+
 func parseMinecraftCodes(input string) string {
-	// remove Windows Carriage Returns (\r)
-	input = strings.ReplaceAll(input, "\r", "")
-
-	lines := strings.Split(input, "\n")
-	var parsedLines []string
-
-	for _, line := range lines {
+	lines := strings.Split(strings.ReplaceAll(input, "\r", ""), "\n")
+	for lineIndex, line := range lines {
 		if !strings.Contains(line, "§") {
-			parsedLines = append(parsedLines, line)
 			continue
 		}
-
 		var builder strings.Builder
-		currentStyle := lipgloss.NewStyle()
-
+		style := lipgloss.NewStyle()
 		parts := strings.Split(line, "§")
 		builder.WriteString(parts[0])
-
 		for _, part := range parts[1:] {
-			if len(part) == 0 {
+			if part == "" {
 				continue
 			}
-
-			code := rune(strings.ToLower(string(part[0]))[0])
-			text := part[1:]
-
-			if hex, exists := mcColors[code]; exists {
-				currentStyle = currentStyle.Foreground(lipgloss.Color(hex))
+			code := rune(part[0])
+			if hex, ok := mcColors[code]; ok {
+				style = style.Foreground(lipgloss.Color(hex))
 			} else {
 				switch code {
 				case 'l':
-					currentStyle = currentStyle.Bold(true)
+					style = style.Bold(true)
 				case 'o':
-					currentStyle = currentStyle.Italic(true)
+					style = style.Italic(true)
 				case 'n':
-					currentStyle = currentStyle.Underline(true)
+					style = style.Underline(true)
 				case 'm':
-					currentStyle = currentStyle.Strikethrough(true)
+					style = style.Strikethrough(true)
 				case 'r':
-					currentStyle = lipgloss.NewStyle()
+					style = lipgloss.NewStyle()
 				}
 			}
-
-			builder.WriteString(currentStyle.Render(text))
+			builder.WriteString(style.Render(part[1:]))
 		}
-		parsedLines = append(parsedLines, builder.String())
+		lines[lineIndex] = builder.String()
 	}
+	return strings.Join(lines, "\n")
+}
 
-	return strings.Join(parsedLines, "\n")
+type sendResult struct {
+	output string
+	err    error
 }
 
 type model struct {
@@ -89,138 +67,172 @@ type model struct {
 	messages     []string
 	history      []string
 	historyIdx   int
-	senderStyle  lipgloss.Style
-	headerStyle  lipgloss.Style
-	headerHeight int
-	err          error
-	rconClient   *rcon.Client
+	registry     commandRegistry
+	executor     executor
+	busy         bool
+	status       string
+	palette      []string
+	paletteIndex int
 }
 
-func initialModel(rconClient *rcon.Client) model {
+func initialModel(client *rcon.Client) model { return newModel(rconExecutor{client: client}) }
+
+func newModel(e executor) model {
 	ta := textarea.New()
-	ta.Placeholder = "Enter command... (Esc to unfocus, /exit to quit)"
+	ta.Placeholder = placeHolderText
 	ta.Focus()
 	ta.Prompt = "❯ "
 	ta.CharLimit = 280
-	ta.SetWidth(80)
 	ta.SetHeight(1)
 	ta.ShowLineNumbers = false
-
-	vp := viewport.New(80, 20)
-
-	return model{
-		textarea:     ta,
-		messages:     []string{},
-		history:      []string{},
-		historyIdx:   -1,
-		viewport:     vp,
-		headerHeight: 2,
-		senderStyle:  lipgloss.NewStyle().Foreground(lipgloss.Color("5")),
-		headerStyle:  lipgloss.NewStyle().Bold(true).Foreground(lipgloss.Color("12")),
-		rconClient:   rconClient,
-	}
+	return model{textarea: ta, viewport: viewport.New(80, 20), historyIdx: -1, registry: newCommandRegistry(), executor: e, status: "connected"}
 }
 
-func (m model) Init() tea.Cmd {
-	return textarea.Blink
-}
+func (m model) Init() tea.Cmd { return textarea.Blink }
 
 func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
-	var (
-		tiCmd tea.Cmd
-		vpCmd tea.Cmd
-	)
-
-	switch msg := msg.(type) {
+	switch message := msg.(type) {
+	case sendResult:
+		m.busy = false
+		if message.err != nil {
+			m.addMessage(fmt.Sprintf("Error: %v", message.err), lipgloss.NewStyle().Foreground(lipgloss.Color("9")))
+			m.status = "error"
+		} else {
+			m.addMessage(message.output, lipgloss.NewStyle().Foreground(lipgloss.Color("252")))
+			m.status = "ready"
+		}
+		return m, nil
+	case tea.WindowSizeMsg:
+		m.resize(message.Width, message.Height)
 	case tea.KeyMsg:
-		switch msg.Type {
-		case tea.KeyCtrlC:
+		if message.Type == tea.KeyCtrlC {
 			return m, tea.Quit
-
-		case tea.KeyEsc:
-			m.textarea.Blur()
+		}
+		if message.Type == tea.KeyUp && len(m.history) > 0 && m.textarea.Focused() {
+			if m.historyIdx < len(m.history)-1 {
+				m.historyIdx++
+			}
+			m.textarea.SetValue(m.history[len(m.history)-1-m.historyIdx])
 			return m, nil
-
-		case tea.KeyUp:
-			if m.textarea.Focused() && len(m.history) > 0 {
-				if m.historyIdx < len(m.history)-1 {
-					m.historyIdx++
-					m.textarea.SetValue(m.history[len(m.history)-1-m.historyIdx])
-				}
-				return m, nil
+		}
+		if message.Type == tea.KeyDown && len(m.history) > 0 && m.textarea.Focused() {
+			if m.historyIdx > 0 {
+				m.historyIdx--
+				m.textarea.SetValue(m.history[len(m.history)-1-m.historyIdx])
+			} else if m.historyIdx == 0 {
+				m.historyIdx = -1
+				m.textarea.Reset()
 			}
-
-		case tea.KeyDown:
-			if m.textarea.Focused() && len(m.history) > 0 {
-				if m.historyIdx > 0 {
-					m.historyIdx--
-					m.textarea.SetValue(m.history[len(m.history)-1-m.historyIdx])
-				} else if m.historyIdx == 0 {
-					m.historyIdx = -1
-					m.textarea.Reset()
-				}
-				return m, nil
+			return m, nil
+		}
+		if m.palette != nil && (message.Type == tea.KeyUp || message.Type == tea.KeyDown) {
+			if message.Type == tea.KeyUp && m.paletteIndex > 0 {
+				m.paletteIndex--
 			}
-
+			if message.Type == tea.KeyDown && m.paletteIndex < len(m.palette)-1 {
+				m.paletteIndex++
+			}
+			return m, nil
+		}
+		switch message.Type {
+		case tea.KeyTab:
+			if len(m.palette) > 0 {
+				m.textarea.SetValue(m.palette[m.paletteIndex] + " ")
+				m.palette = nil
+			}
+			return m, nil
+		case tea.KeyEsc:
+			m.palette = nil
+			m.textarea.Blur()
+			m.textarea.Placeholder = "Enter to type ..."
+			return m, nil
 		case tea.KeyEnter:
 			if !m.textarea.Focused() {
 				m.textarea.Focus()
+				m.textarea.Placeholder = placeHolderText
 				return m, textarea.Blink
 			}
+			return m.submit()
+		}
+	}
+	var textareaCmd, viewportCmd tea.Cmd
+	m.textarea, textareaCmd = m.textarea.Update(msg)
+	value := strings.TrimSpace(m.textarea.Value())
+	if strings.HasPrefix(value, "/") {
+		m.palette = m.registry.suggestions(strings.Fields(value)[0])
+		m.paletteIndex = 0
+	} else {
+		m.palette = nil
+	}
+	m.viewport, viewportCmd = m.viewport.Update(msg)
+	return m, tea.Batch(textareaCmd, viewportCmd)
+}
 
-			input := strings.TrimSpace(m.textarea.Value())
-			if input == "" {
-				return m, nil
-			}
-			if input == "/exit" {
-				return m, tea.Quit
-			}
-
-			m.history = append(m.history, input)
-			m.historyIdx = -1
-
-			parsedInput := parseMinecraftCodes(fmt.Sprintf("  §a❯§r %s", input))
-			m.messages = append(m.messages, parsedInput)
-
-			output, err := m.rconClient.Send(input)
-			if err != nil {
-				m.err = err
-				output = fmt.Sprintf("§cFehler: %v", err)
-			}
-
-			cleanOutput := strings.ReplaceAll(output, "\t", "    ")
-
-			parsedResponse := parseMinecraftCodes(cleanOutput)
-			m.messages = append(m.messages, parsedResponse)
-
-			m.viewport.SetContent(strings.Join(m.messages, "\n"))
-			m.textarea.Reset()
-			m.viewport.GotoBottom()
+func (m *model) submit() (tea.Model, tea.Cmd) {
+	input := strings.TrimSpace(m.textarea.Value())
+	if input == "" || m.busy {
+		return m, nil
+	}
+	m.history = append(m.history, input)
+	m.historyIdx = -1
+	m.addMessage("❯ "+input, lipgloss.NewStyle().Foreground(lipgloss.Color("14")))
+	m.textarea.Reset()
+	m.palette = nil
+	parsed := parseInput(input)
+	if parsed.isUI {
+		item, ok := m.registry.find(parsed.command)
+		if !ok {
+			m.addMessage("Unknown UI command: "+parsed.command, lipgloss.NewStyle().Foreground(lipgloss.Color("9")))
 			return m, nil
 		}
-
-	case tea.WindowSizeMsg:
-		m.viewport.Width = msg.Width
-		m.viewport.Height = msg.Height - m.textarea.Height() - m.headerHeight - 1
-		m.textarea.SetWidth(msg.Width)
+		action := item.Handler(m)
+		if action.message != "" {
+			m.addMessage(action.message, lipgloss.NewStyle().Foreground(lipgloss.Color("252")))
+		}
+		if action.quit {
+			return m, tea.Quit
+		}
+		return m, nil
 	}
+	m.busy = true
+	m.status = "sending..."
+	return m, func() tea.Msg {
+		output, err := m.executor.Send(parsed.command)
+		return sendResult{output: strings.ReplaceAll(output, "\t", "    "), err: err}
+	}
+}
 
-	m.textarea, tiCmd = m.textarea.Update(msg)
-	m.viewport, vpCmd = m.viewport.Update(msg)
+func (m *model) addMessage(message string, style lipgloss.Style) {
+	m.messages = append(m.messages, style.Render(parseMinecraftCodes(message)))
+	m.viewport.SetContent(strings.Join(m.messages, "\n"))
+	m.viewport.GotoBottom()
+}
 
-	return m, tea.Batch(tiCmd, vpCmd)
+func (m *model) resize(width, height int) {
+	m.viewport.Width = clampMinimum(1, width)
+	m.viewport.Height = clampMinimum(1, height-m.textarea.Height()-4)
+	m.textarea.SetWidth(clampMinimum(1, width))
+}
+
+func clampMinimum(minimum, value int) int {
+	if value > minimum {
+		return value
+	}
+	return minimum
 }
 
 func (m model) View() string {
-	separator := lipgloss.NewStyle().Foreground(lipgloss.Color("240")).Render(strings.Repeat("─", m.viewport.Width))
-	headerText := m.headerStyle.Render("RCON Client by github.com/discohaus")
-
-	return fmt.Sprintf(
-		"%s\n%s\n%s\n%s\n%s",
-		headerText,
-		separator,
-		m.viewport.View(),
-		separator,
-		m.textarea.View(),
-	)
+	accent := lipgloss.NewStyle().Bold(true).Foreground(lipgloss.Color("12"))
+	statusColor := "10"
+	if m.status == "error" {
+		statusColor = "9"
+	}
+	status := lipgloss.NewStyle().Foreground(lipgloss.Color(statusColor)).Render("● " + m.status)
+	header := accent.Render("RCON Client by DiscoHaus") + "  " + status
+	separator := lipgloss.NewStyle().Foreground(lipgloss.Color("240")).Render(strings.Repeat("─", clampMinimum(1, m.viewport.Width)))
+	palette := ""
+	if len(m.palette) > 0 {
+		palette = "\n" + lipgloss.NewStyle().Foreground(lipgloss.Color("11")).Render(strings.Join(m.palette, "  "))
+	}
+	return strings.Join([]string{header, separator, m.viewport.View(), separator, m.textarea.View() + palette}, "\n")
 }

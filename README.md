@@ -21,6 +21,17 @@ go get github.com/jltobler/go-rcon
 
 ### Usage
 
+The CLI starts an interactive terminal UI. Enter Minecraft/RCON commands without
+a leading slash, for example `time set day`. A leading `/` is reserved for local
+UI commands and is never sent to the server:
+
+- `/help` lists available UI commands.
+- `/exit` closes the client.
+
+Type `/` to open command completion, use `Tab` to accept a suggestion, and use
+the arrow keys to navigate the palette. The UI remains responsive while a
+server command is running.
+
 Import the package into your project.
 
 ```go

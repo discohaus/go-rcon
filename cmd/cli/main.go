@@ -21,22 +21,22 @@ func main() {
 		Run: func(_ *cobra.Command, _ []string) {
 			cli, err := cli.NewCli(&host, &port, &password, &charset)
 			if err != nil {
-				fmt.Println(err)
+				_, _ = fmt.Fprintln(os.Stderr, "go-rcon: "+err.Error())
 				os.Exit(1)
 			}
 			if err := cli.Run(); err != nil {
-				fmt.Println(err)
+				_, _ = fmt.Fprintln(os.Stderr, "go-rcon: "+err.Error())
 				os.Exit(1)
 			}
 		},
 	}
-	rootCmd.Flags().StringVarP(&host, "host", "H", "localhost", "Destination-Host")
-	rootCmd.Flags().Int32VarP(&port, "port", "P", 25575, "Destination-Port")
+	rootCmd.Flags().StringVarP(&host, "host", "H", "localhost", "Server Host")
+	rootCmd.Flags().Int32VarP(&port, "port", "P", 25575, "Server Port which RCON is listening on")
 	rootCmd.Flags().StringVarP(&password, "password", "p", "", "RCON Password")
-	rootCmd.Flags().StringVarP(&charset, "charset", "c", "latin1", "Charset to use")
+	rootCmd.Flags().StringVarP(&charset, "charset", "c", "latin1", "Charset to use for RCON Payloads Options: latin1, utf8, ascii")
 
 	if err := rootCmd.Execute(); err != nil {
-		fmt.Println(err)
+		_, _ = fmt.Fprintln(os.Stderr, "go-rcon: "+err.Error())
 		os.Exit(1)
 	}
 
