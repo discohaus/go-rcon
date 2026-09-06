@@ -2,6 +2,7 @@
 package cli
 
 import (
+	"errors"
 	"fmt"
 	"net"
 	"strconv"
@@ -61,7 +62,14 @@ func NewCli(host *string, port *int32, password *string, charSet *string) (*Cli,
 	}
 	rconClient := rcon.NewClient(fmt.Sprintf("rcon://%s:%s", strings.TrimSpace(*host), strconv.FormatInt(int64(*port), 10)), parsedPassword, rcon.WithOptions(parsedCharSet))
 	if err := rconClient.CheckConnection(); err != nil {
-		return nil, fmt.Errorf("RCON connection failed — is the server running?\n%w", err)
+		switch {
+		case errors.Is(err, rcon.ErrAuthenticationFailed):
+			return nil, fmt.Errorf("RCON authentication failed — wrong password?\n%w", err)
+		case errors.Is(err, rcon.ErrConnectionFailed):
+			return nil, fmt.Errorf("RCON connection failed — is the server running?\n%w", err)
+		default:
+			return nil, fmt.Errorf("RCON connection error\n%w", err)
+		}
 	}
 	cli := &Cli{
 		rconClient: rconClient,

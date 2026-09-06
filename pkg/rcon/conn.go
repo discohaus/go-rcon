@@ -50,7 +50,7 @@ func Dial(addr, password string, cs CharSet) (*Conn, error) {
 
 	c, err := net.Dial("tcp", net.JoinHostPort(host, port))
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("%w: %v", ErrConnectionFailed, err)
 	}
 
 	return NewConn(c, password, cs)
@@ -73,7 +73,7 @@ func NewConn(c net.Conn, password string, cs CharSet) (*Conn, error) {
 
 	if err := conn.authenticate(password); err != nil {
 		_ = conn.Close()
-		return nil, fmt.Errorf("authentication failed: %w", err)
+		return nil, fmt.Errorf("%w: %v", ErrAuthenticationFailed, err)
 	}
 
 	return conn, nil

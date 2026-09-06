@@ -1,10 +1,6 @@
 // Package rcon provides a Go client for the Minecraft RCON protocol.
 package rcon
 
-import (
-	"fmt"
-)
-
 // ClientOption defines a function that can be used to configure a Client.
 type ClientOption func(*Client)
 
@@ -47,7 +43,7 @@ func NewClient(addr, password string, opts ...ClientOption) *Client {
 func (c *Client) Send(command string) (string, error) {
 	conn, err := Dial(c.addr, c.password, c.charSet)
 	if err != nil {
-		return "", fmt.Errorf("failed to establish connection: %w", err)
+		return "", err
 	}
 	defer func() {
 		_ = conn.Close()
@@ -61,7 +57,7 @@ func (c *Client) Send(command string) (string, error) {
 func (c *Client) CheckConnection() error {
 	conn, err := Dial(c.addr, c.password, c.charSet)
 	if err != nil {
-		return fmt.Errorf("failed to establish connection: %w", err)
+		return err
 	}
 	defer func() {
 		_ = conn.Close()
