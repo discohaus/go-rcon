@@ -26,6 +26,14 @@ func (c *Cli) Run() error {
 	return nil
 }
 
+// ExecuteCommand sends a single command to the RCON server and returns the response.
+func (c *Cli) ExecuteCommand(command string) (string, error) {
+	if strings.TrimSpace(command) == "" {
+		return "", fmt.Errorf("command required")
+	}
+	return c.rconClient.Send(command)
+}
+
 // NewCli creates a new Cli instance with the given host, port, password, and character set.
 func NewCli(host *string, port *int32, password *string, charSet *string) (*Cli, error) {
 	if host == nil || strings.TrimSpace(*host) == "" {

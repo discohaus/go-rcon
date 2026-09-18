@@ -18,3 +18,13 @@ func TestNewCliValidatesArgumentsBeforeConnecting(t *testing.T) {
 		t.Fatal("nil host was accepted")
 	}
 }
+
+func TestExecuteCommandValidatesEmptyCommand(t *testing.T) {
+	c := &Cli{}
+	if _, err := c.ExecuteCommand(""); err == nil {
+		t.Fatal("empty command was accepted")
+	}
+	if _, err := c.ExecuteCommand("   "); err == nil {
+		t.Fatal("whitespace command was accepted")
+	}
+}
