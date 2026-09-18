@@ -191,6 +191,10 @@ func (m *model) submit() (tea.Model, tea.Cmd) {
 			return m, nil
 		}
 		action := item.Handler(m)
+		if action.clear {
+			m.messages = nil
+			m.refreshViewportContent()
+		}
 		if action.message != "" {
 			m.addMessage(action.message, lipgloss.NewStyle().Foreground(lipgloss.Color("252")))
 		}

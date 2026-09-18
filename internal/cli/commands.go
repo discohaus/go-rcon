@@ -16,6 +16,9 @@ func newCommandRegistry() commandRegistry {
 	return commandRegistry{commands: []command{
 		{Name: "/help", Description: "show available commands", Handler: func(m *model) commandAction { return commandAction{message: m.registry.help()} }},
 		{Name: "/exit", Description: "quit the client", Handler: func(*model) commandAction { return commandAction{quit: true} }},
+		{Name: "/clear", Description: "clear output", Handler: func(*model) commandAction {
+			return commandAction{clear: true}
+		}},
 	}}
 }
 
@@ -73,4 +76,5 @@ func parseInput(input string) parsedInput {
 type commandAction struct {
 	message string
 	quit    bool
+	clear   bool
 }
