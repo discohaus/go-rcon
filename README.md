@@ -95,37 +95,52 @@ client := rcon.NewClient(
 
 Prebuilt binaries are available on the [GitHub Releases page](https://github.com/discohaus/go-rcon/releases).
 
-**Run the binary:**
+**Interactive Mode:**
 
 ```sh
-./go-rcon --host localhost --port 25575 --password 'your_password' --charset latin1
+# Run interactive TUI
+./go-rcon -i --host localhost --port 25575 --password 'your_password'
+```
 
+**Direct Command Mode:**
+
+```sh
+# Execute a single command and print response directly
+./go-rcon -c "say Hello World" --host localhost --port 25575 --password 'your_password'
 ```
 
 **Run directly from source:**
 
 ```sh
-go run ./cmd/cli --host localhost --port 25575 --password 'your_password' --charset latin1
-
+go run ./cmd/cli -i --host localhost --port 25575 --password 'your_password'
 ```
 
 ### CLI Flags
 
 | Flag | Short | Default | Description |
 | --- | --- | --- | --- |
+| `--interactive` | `-i` | `false` | Start interactive TUI session |
+| `--command` | `-c` | *empty* | Execute single RCON command and print output directly |
 | `--host` | `-H` | `localhost` | RCON server hostname or IP address |
 | `--port` | `-P` | `25575` | RCON server port (`1`–`65535`) |
 | `--password` | `-p` | *empty* | RCON password |
-| `--charset` | `-c` | `latin1` | Payload character set: `ascii`, `latin1`, or `utf8` |
+| `--file` | `-f` | *empty* | Path to minecraft vanilla properties file to read `rcon.password` and `rcon.port` from (e.g. `server.properties`) |
+| `--charset` | `-C` | `latin1` | Payload character set: `ascii`, `latin1`, or `utf8` |
 
-*Example using short flags:*
+*Examples using short flags:*
 
 ```sh
-./go-rcon -H localhost -P 25575 -p 'your_password' -c latin1
+# Interactive TUI mode
+./go-rcon -i -H localhost -P 25575 -p 'your_password' -C latin1
 
+# Direct command execution mode
+./go-rcon -c "list" -H localhost -P 25575 -p 'your_password' -C latin1
+
+# Using a server.properties file for port and password
+./go-rcon -c "list" -H localhost -f /path/to/server.properties
 ```
 
-> **Note:** Invalid host, port, and charset values are validated and reported before launching the TUI.
+> **Note:** Either `--interactive` (`-i`) or `--command` (`-c`) must be specified. Invalid host, port, and charset values are validated and reported before connecting.
 
 ### TUI Commands
 
@@ -172,4 +187,3 @@ make cli           # Run cli
 make cli-dev       # Run local mincraft server ready for make cli
 
 ```
-
