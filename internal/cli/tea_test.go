@@ -59,6 +59,18 @@ func TestModelShowsNoResponseForEmptyOutput(t *testing.T) {
 	}
 }
 
+func TestModelClearsMessages(t *testing.T) {
+	m := newModel(&fakeExecutor{output: "ok"})
+	m.addMessage("old output", lipgloss.NewStyle())
+	m.textarea.SetValue("/clear")
+
+	updated, cmd := m.submit()
+	model := updated.(*model)
+	if cmd != nil || len(model.messages) != 0 {
+		t.Fatalf("clear command left messages=%v, cmd=%v", model.messages, cmd)
+	}
+}
+
 func TestModelUnknownCommandAndExit(t *testing.T) {
 	fake := &fakeExecutor{}
 	m := newModel(fake)
