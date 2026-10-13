@@ -3,6 +3,7 @@ project_name: go-rcon
 
 before:
   hooks:
+    - rsvg-convert -w 64 -h 64 identity/assets/go-rcon/chip.svg -o internal/cli/go_rcon_chip.png
     - go mod tidy
 
 builds:

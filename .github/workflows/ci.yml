@@ -13,6 +13,14 @@ jobs:
     steps:
       - name: Checkout Code
         uses: actions/checkout@v4
+        with:
+          submodules: true
+
+      - name: Install SVG renderer
+        run: sudo apt-get update && sudo apt-get install -y librsvg2-bin
+
+      - name: Generate CLI icon
+        run: rsvg-convert -w 64 -h 64 identity/assets/go-rcon/chip.svg -o internal/cli/go_rcon_chip.png
 
       - name: Set up Go
         uses: actions/setup-go@v5
@@ -36,6 +44,14 @@ jobs:
     steps:
       - name: Checkout Code
         uses: actions/checkout@v4
+        with:
+          submodules: true
+
+      - name: Install SVG renderer
+        run: sudo apt-get update && sudo apt-get install -y librsvg2-bin
+
+      - name: Generate CLI icon
+        run: rsvg-convert -w 64 -h 64 identity/assets/go-rcon/chip.svg -o internal/cli/go_rcon_chip.png
 
       - name: Set up Go
         uses: actions/setup-go@v5

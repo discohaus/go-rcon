@@ -1,8 +1,13 @@
 # go-rcon
 
-[![Go Reference](https://pkg.go.dev/badge/github.com/discohaus/go-rcon/pkg/rcon.svg)](https://pkg.go.dev/github.com/discohaus/go-rcon/pkg/rcon)
+<div align="center">
+  <img src="https://cdn.jsdelivr.net/gh/discohaus/identity@latest/assets/go-rcon/lockup.svg" alt="DiscoPanel" width="128" height="128" />
+  
+  **Simple to use rcon cli and package written in go.**
+  
+[Discord](https://discord.gg/6Z9yKTbsrP) • [Go Reference](https://pkg.go.dev/github.com/discohaus/go-rcon/pkg/rcon)
+</div>
 
-A robust Minecraft RCON client for Go featuring support for asynchronous command execution and automatic reassembly of fragmented responses.
 
 > **Note:** This package is based on the original [implementation by jltobler](https://github.com/jltobler/go-rcon) and is actively maintained and updated by us.
 
@@ -157,6 +162,7 @@ say Server restarting in 5 minutes
 | Command | Description |
 | --- | --- |
 | `/help` | Show all available local TUI commands |
+| `/clear` | Clears the screen |
 | `/exit` | Close the CLI application |
 
 *Tip: Press `/` and use `Tab` to navigate local command auto-completion.*
@@ -170,6 +176,8 @@ say Server restarting in 5 minutes
 * **Go** (version matching `go.mod`)
 * **golangci-lint**
 * **Make**
+* **librsvg** (`rsvg-convert`)
+* Initialized `identity` submodule (`git submodule update --init`)
 
 ### Available Commands
 
@@ -177,6 +185,7 @@ A `Makefile` is provided to streamline common development workflows:
 
 ```sh
 make all           # Run everything regarding ci pipeline
+make gen           # Generate the embedded CLI icon from identity
 make test          # Run test suite
 make test-coverage # Run tests with coverage reporting
 make lint          # Run golangci-lint

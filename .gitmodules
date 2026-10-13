@@ -1,0 +1,4 @@
+[submodule "identity"]
+	path = identity
+	url = https://github.com/discohaus/identity
+	branch = main
