@@ -73,6 +73,7 @@ type model struct {
 	status       string
 	palette      []string
 	paletteIndex int
+	iconProtocol iconProtocol
 }
 
 func initialModel(client *rcon.Client) model { return newModel(rconExecutor{client: client}) }
@@ -85,7 +86,7 @@ func newModel(e executor) model {
 	ta.CharLimit = 280
 	ta.SetHeight(1)
 	ta.ShowLineNumbers = false
-	return model{textarea: ta, viewport: viewport.New(80, 20), historyIdx: -1, registry: newCommandRegistry(), executor: e, status: "connected"}
+	return model{textarea: ta, viewport: viewport.New(80, 20), historyIdx: -1, registry: newCommandRegistry(), executor: e, status: "connected", iconProtocol: detectIconProtocol()}
 }
 
 func (m model) Init() tea.Cmd { return textarea.Blink }
@@ -244,6 +245,14 @@ func (m model) View() string {
 	}
 	status := lipgloss.NewStyle().Foreground(lipgloss.Color(statusColor)).Render("● " + m.status)
 	header := accent.Render("RCON Client by DiscoHaus") + "  " + status
+	switch m.iconProtocol {
+	case kittyIcon:
+		header = kittyIconSequence + header
+	case footSixelIcon:
+		// Paint over the reserved cells after the text, then restore the
+		// cursor so Bubble Tea can continue rendering the next line.
+		header = "   " + header + "\x1b7\r" + footIconSequence + "\x1b8"
+	}
 	separator := lipgloss.NewStyle().Foreground(lipgloss.Color("240")).Render(strings.Repeat("─", clampMinimum(1, m.viewport.Width)))
 	palette := ""
 	if len(m.palette) > 0 {
